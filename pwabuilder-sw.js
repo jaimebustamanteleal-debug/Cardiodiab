@@ -1,5 +1,5 @@
-// Service Worker básico para PWA offline
-const CACHE_NAME = 'salud-pwa-cache-v1';
+// Service Worker PWA - Versión 1.1
+const CACHE_NAME = 'salud-pwa-cache-v1.1';
 const ASSETS_TO_CACHE = [
   './index.html',
   './manifest.json',
@@ -24,6 +24,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         keys.map((key) => {
           if (key !== CACHE_NAME) {
+            console.log('Eliminando caché antigua:', key);
             return caches.delete(key);
           }
         })
@@ -40,7 +41,6 @@ self.addEventListener('fetch', (event) => {
         return cachedResponse;
       }
       return fetch(event.request).catch(() => {
-        // Fallback para cuando no hay internet ni en caché
         return caches.match('./index.html');
       });
     })
