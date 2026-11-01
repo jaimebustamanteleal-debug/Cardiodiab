@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Control de Salud en la Nube - Hipertensión & Diabetes</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- html2pdf.js para reporte médico -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 h-full flex flex-col font-sans select-none overflow-hidden">
+
+    <!-- Header Móvil Superior -->
+    <header class="bg-slate-800/90 backdrop-blur-md border-b border-slate-700/60 px-4 py-3 shrink-0 flex items-center justify-between z-20">
+        <div class="flex items-center gap-2.5">
+            <div class="bg-indigo-600/20 p-2 rounded-xl border border-indigo-500/30">
+                <i class="fa-solid fa-cloud-heart text-indigo-400 text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-sm font-bold tracking-tight text-white">CardioDiab Cloud</h1>
+                <p id="cloudSyncStatus" class="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Nube Conectada
+                </p>
+            </div>
+        </div>
+
+        <!-- Selector de Perfil Rápido Header -->
+        <div class="flex items-center gap-1.5">
+            <select id="headerProfileSelect" onchange="switchProfile(this.value)" class="bg-slate-900 text-xs text-indigo-200 border border-slate-700 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                <!-- Dinámico -->
+            </select>
+            <button onclick="openProfileModal()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs px-2.5 py-1.5 rounded-lg transition">
+                <i class="fa-solid fa-user-plus"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Contenedor Principal de Vistas (Tabs) -->
+    <main class="flex-grow overflow-y-auto relative pb-20 no-scrollbar">
+        
+        <!-- VISTA 1: INICIO / RESUMEN & REGISTRO -->
+        <section id="tab-home" class="p-4 space-y-4 max-w-lg mx-auto">
+            
+            <!-- Tarjeta de Resumen del Paciente Activo -->
+            <div class="bg-gradient-to-br from-slate-800 to-slate-800/80 rounded-2xl p-4 border border-slate-700/60 shadow-lg relative overflow-hidden">
+                <div class="absolute right-0 top-0 translate-x-4 -translate-y-4 w-28 h-28 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none"></div>
+                <div class="flex justify-between items-start mb-3">
+                    <div>
+                        <span class="text-[10px] uppercase font-bold text-indigo-400 tracking-wider">Perfil Activo</span>
+                        <h2 id="activeProfileName" class="text-base font-bold text-white">Cargando...</h2>
+                        <p id="activeProfileDx" class="text-xs text-slate-400">Dx: -</p>
+                    </div>
+                    <button onclick="openEditProfileModal()" class="text-slate-400 hover:text-white text-xs bg-slate-700/50 hover:bg-slate-700 p-2 rounded-xl transition">
+                        <i class="fa-solid fa-pen"></i> Editar
+                    </button>
+                </div>
+                <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-700/50 text-center">
+                    <div class="bg-slate-900/40 p-2 rounded-xl">
+                        <span class="block text-[9px] uppercase font-semibold text-slate-400">Peso</span>
+                        <span id="activeWeight" class="text-xs font-bold text-indigo-300">- kg</span>
+                    </div>
+                    <div class="bg-slate-900/40 p-2 rounded-xl">
+                        <span class="block text-[9px] uppercase font-semibold text-slate-400">Estatura</span>
+                        <span id="activeHeight" class="text-xs font-bold text-indigo-300">- m</span>
+                    </div>
+                    <div class="bg-slate-900/40 p-2 rounded-xl">
+                        <span class="block text-[9px] uppercase font-semibold text-slate-400">IMC</span>
+                        <span id="activeBmi" class="text-xs font-bold text-indigo-300">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulario de Registro Rápido -->
+            <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700/60 shadow-lg">
+                <h3 class="text-sm font-bold text-white mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-plus text-indigo-400"></i> Nuevo Registro Clínico
+                </h3>
+                <form id="recordForm" onsubmit="handleRecordSubmit(event)" class="space-y-3">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[11px] font-medium text-slate-400 mb-1">Fecha y Hora</label>
+                            <input type="datetime-local" id="recDate" required class="w-full text-xs bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-medium text-slate-400 mb-1">Contexto</label>
+                            <select id="recContext" class="w-full text-xs bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+                                <option value="En ayunas">En ayunas</option>
+                                <option value="Antes de comer">Antes de comer</option>
+                                <option value="2 hrs después">2 hrs después</option>
+                                <option value="Antes de dormir">Antes de dormir</option>
+                                <option value="Otro / Aleatorio">Otro / Aleatorio</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Presión Arterial -->
+                    <div class="bg-rose-950/20 p-3 rounded-xl border border-rose-900/30 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-rose-400 flex items-center gap-1.5"><i class="fa-solid fa-heart-pulse"></i> Presión Arterial</span>
+                            <span class="text-[10px] text-slate-400">mmHg</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <input type="number" id="recSys" placeholder="Sistólica (Alta)" class="w-full text-xs bg-slate-900 border border-slate-700 rounded-lg p-2 text-white placeholder-slate-500 focus:ring-1 focus:ring-rose-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <input type="number" id="recDia" placeholder="Diastólica (Baja)" class="w-full text-xs bg-slate-900 border border-slate-700 rounded-lg p-2 text-white placeholder-slate-500 focus:ring-1 focus:ring-rose-500 focus:outline-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Glicemia -->
+                    <div class="bg-amber-950/20 p-3 rounded-xl border border-amber-900/30 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-amber-400 flex items-center gap-1.5"><i class="fa-solid fa-droplet"></i> Glicemia (Azúcar)</span>
+                            <span class="text-[10px] text-slate-400">mg/dL</span>
+                        </div>
+                        <input type="number" id="recSugar" placeholder="Ej. 115" class="w-full text-xs bg-slate-900 border border-slate-700 rounded-lg p-2 text-white placeholder-slate-500 focus:ring-1 focus:ring-amber-500 focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-400 mb-1">Síntomas / Notas</label>
+                        <input type="text" id="recSymptoms" placeholder="Ej. Mareo leve, dolor de cabeza..." class="w-full text-xs bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white placeholder-slate-500 focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs py-3 rounded-xl transition shadow-lg shadow-indigo-600/20 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Guardar y Sincronizar
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- VISTA 2: GRÁFICOS Y TENDENCIAS -->
+        <section id="tab-charts" class="p-4 space-y-4 max-w-lg mx-auto hidden">
+            <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700/60 shadow-lg space-y-3">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-chart-line text-indigo-400"></i> Tendencias Clínicas
+                    </h3>
+                    <select id="chartPeriodSelect" onchange="renderCharts()" class="bg-slate-900 text-xs text-slate-200 border border-slate-700 rounded-lg px-2.5 py-1.5 focus:outline-none">
+                        <option value="7">Últimos 7 días</option>
+                        <option value="30" selected>Últimos 30 días</option>
+                        <option value="90">Últimos 3 meses</option>
+                        <option value="all">Todo el historial</option>
+                    </select>
+                </div>
+
+                <!-- Gráfico de Presión -->
+                <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-700/50">
+                    <h4 class="text-xs font-bold text-rose-400 mb-2">Presión Arterial (mmHg)</h4>
+                    <div class="relative h-48 w-full">
+                        <canvas id="bpCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Gráfico de Glicemia -->
+                <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-700/50">
+                    <h4 class="text-xs font-bold text-amber-400 mb-2">Glicemia (mg/dL)</h4>
+                    <div class="relative h-48 w-full">
+                        <canvas id="sugarCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VISTA 3: HISTORIAL DE REGISTROS -->
+        <section id="tab-history" class="p-4 space-y-4 max-w-lg mx-auto hidden">
+            <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700/60 shadow-lg space-y-3">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-clock-rotate-left text-indigo-400"></i> Historial y Reporte PDF
+                    </h3>
+                    <div class="flex gap-2">
+                        <button onclick="generatePDFReport()" class="bg-rose-600 hover:bg-rose-500 text-white text-xs px-3 py-1.5 rounded-lg transition font-medium flex items-center gap-1.5 shadow-md shadow-rose-600/20">
+                            <i class="fa-solid fa-file-pdf"></i> Reporte Médico PDF
+                        </button>
+                    </div>
+                </div>
+
+                <div id="recordsListContainer" class="space-y-2.5">
+                    <!-- Dinámico -->
+                </div>
+            </div>
+        </section>
+
+        <!-- VISTA 4: AJUSTES / GESTIÓN DE PERFILES -->
+        <section id="tab-settings" class="p-4 space-y-4 max-w-lg mx-auto hidden">
+            <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700/60 shadow-lg space-y-4">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-users-gear text-indigo-400"></i> Gestión de Perfiles
+                </h3>
+                <div id="profilesListContainer" class="space-y-2">
+                    <!-- Dinámico -->
+                </div>
+                <button onclick="openProfileModal()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-medium text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-plus"></i> Crear Nuevo Perfil
+                </button>
+
+                <div class="pt-4 border-t border-slate-700 space-y-2">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Identificador de Sincronización</h4>
+                    <p class="text-[11px] text-slate-500 break-all bg-slate-900 p-2.5 rounded-lg border border-slate-700 font-mono" id="userIdDisplay">Cargando ID...</p>
+                    <p class="text-[10px] text-slate-400">Comparte este ID o ingresa con tu cuenta para ver los mismos datos en tiempo real desde múltiples celulares.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Barra de Navegación Móvil Inferior -->
+    <nav class="bg-slate-800/95 backdrop-blur-md border-t border-slate-700/60 h-16 shrink-0 flex items-center justify-around px-2 z-20 fixed bottom-0 left-0 right-0 max-w-lg mx-auto">
+        <button onclick="switchTab('home')" id="nav-btn-home" class="flex flex-col items-center justify-center w-16 h-full text-indigo-400 transition">
+            <i class="fa-solid fa-house text-base"></i>
+            <span class="text-[10px] font-medium mt-1">Inicio</span>
+        </button>
+        <button onclick="switchTab('charts')" id="nav-btn-charts" class="flex flex-col items-center justify-center w-16 h-full text-slate-400 hover:text-slate-200 transition">
+            <i class="fa-solid fa-chart-line text-base"></i>
+            <span class="text-[10px] font-medium mt-1">Gráficos</span>
+        </button>
+        <button onclick="switchTab('history')" id="nav-btn-history" class="flex flex-col items-center justify-center w-16 h-full text-slate-400 hover:text-slate-200 transition">
+            <i class="fa-solid fa-list-check text-base"></i>
+            <span class="text-[10px] font-medium mt-1">Historial</span>
+        </button>
+        <button onclick="switchTab('settings')" id="nav-btn-settings" class="flex flex-col items-center justify-center w-16 h-full text-slate-400 hover:text-slate-200 transition">
+            <i class="fa-solid fa-gear text-base"></i>
+            <span class="text-[10px] font-medium mt-1">Perfiles</span>
+        </button>
+    </nav>
+
+    <!-- Plantilla PDF Oculta -->
+    <div id="pdfReportTemplate" class="hidden">
+        <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 25px; color: #1e293b; background-color: #ffffff; width: 700px; margin: 0 auto;">
+            <div style="border-bottom: 2px solid #4f46e5; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <h1 style="color: #4f46e5; font-size: 22px; margin: 0 0 5px 0; font-weight: bold;">REPORTE CLÍNICO DE MONITOREO</h1>
+                    <p style="color: #64748b; font-size: 11px; margin: 0;">Control de Hipertensión Arterial & Diabetes Mellitus</p>
+                </div>
+                <div style="text-align: right;">
+                    <p style="font-size: 10px; color: #64748b; margin: 0;">Fecha de Emisión:</p>
+                    <p id="pdfReportDate" style="font-size: 11px; font-weight: bold; margin: 2px 0 0 0; color: #334155;"></p>
+                </div>
+            </div>
+
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                <h3 style="font-size: 13px; color: #334155; margin: 0 0 10px 0; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">Información del Paciente</h3>
+                <table style="width: 100%; font-size: 11px; border-collapse: collapse;">
+                    <tr>
+                        <td style="padding: 4px 0; width: 50%;"><strong>Nombre Completo:</strong> <span id="pdfPatientName">-</span></td>
+                        <td style="padding: 4px 0; width: 50%;"><strong>Diagnósticos (Dx):</strong> <span id="pdfPatientDx">-</span></td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 4px 0;"><strong>Peso:</strong> <span id="pdfPatientWeight">-</span></td>
+                        <td style="padding: 4px 0;"><strong>Estatura / IMC:</strong> <span id="pdfPatientBmi">-</span></td>
+                    </tr>
+                </table>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <h3 style="font-size: 13px; color: #334155; margin: 0 0 10px 0; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">Resumen Estadístico</h3>
+                <div style="display: flex; gap: 15px;">
+                    <div style="flex: 1; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 6px; padding: 10px; text-align: center;">
+                        <span style="font-size: 9px; color: #e11d48; text-transform: uppercase; font-weight: bold; display: block;">Presión Promedio (Sys/Dia)</span>
+                        <span id="pdfAvgBp" style="font-size: 14px; font-weight: bold; color: #9f1239; margin-top: 4px; display: block;">-</span>
+                    </div>
+                    <div style="flex: 1; background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 10px; text-align: center;">
+                        <span style="font-size: 9px; color: #d97706; text-transform: uppercase; font-weight: bold; display: block;">Glicemia Promedio</span>
+                        <span id="pdfAvgSugar" style="font-size: 14px; font-weight: bold; color: #b45309; margin-top: 4px; display: block;">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h3 style="font-size: 13px; color: #334155; margin: 0 0 10px 0; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">Historial de Registros Clínicos</h3>
+                <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+                    <thead>
+                        <tr style="background-color: #f1f5f9; color: #475569; text-align: left;">
+                            <th style="padding: 8px; border-bottom: 1px solid #cbd5e1;">Fecha y Hora</th>
+                            <th style="padding: 8px; border-bottom: 1px solid #cbd5e1;">Contexto</th>
+                            <th style="padding: 8px; border-bottom: 1px solid #cbd5e1;">Presión (Sys/Dia)</th>
+                            <th style="padding: 8px; border-bottom: 1px solid #cbd5e1;">Glicemia</th>
+                            <th style="padding: 8px; border-bottom: 1px solid #cbd5e1;">Síntomas / Notas</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pdfTableBody"></tbody>
+                </table>
+            </div>
+
+            <div style="margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 10px; text-align: center; font-size: 9px; color: #94a3b8;">
+                <p style="margin: 0;">Generado automáticamente por CardioDiab Cloud App</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Perfil -->
+    <div id="profileModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+        <div class="bg-slate-800 rounded-2xl shadow-2xl max-w-sm w-full p-5 border border-slate-700 space-y-4">
+            <h3 id="profileModalTitle" class="text-sm font-bold text-white">Nuevo Perfil</h3>
+            <form id="profileForm" onsubmit="handleProfileSubmit(event)" class="space-y-3">
+                <input type="hidden" id="pModalId">
+                <div>
+                    <label class="block text-[11px] font-medium text-slate-400 mb-1">Nombre Completo</label>
+                    <input type="text" id="pModalName" required placeholder="Ej. Juan Pérez" class="w-full text-xs bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-medium text-slate-400 mb-1">Diagnósticos (Dx)</label>
+                    <input type="text" id="pModalDx" placeholder="Ej. Hipertensión Est. 2, Diabetes T2" class="w-full text-xs bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-400 mb-1">Peso (kg)</label>
+                        <input type="number" step="0.1" id="pModalWeight" placeholder="Ej. 78.5" class="w-full text-xs bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-medium text-slate-400 mb-1">Estatura (m)</label>
+                        <input type="number" step="0.01" id="pModalHeight" placeholder="Ej. 1.68" class="w-full text-xs bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none">
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeProfileModal()" class="px-3 py-2 text-xs font-medium text-slate-400 hover:text-white transition">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 text-xs font-medium bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Notificaciones -->
+    <div id="customModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+        <div class="bg-slate-800 rounded-2xl shadow-2xl max-w-xs w-full p-5 border border-slate-700 text-center space-y-3">
+            <div id="customModalIcon" class="w-10 h-10 rounded-full bg-indigo-600/20 text-indigo-400 mx-auto flex items-center justify-center text-lg">
+                <i class="fa-solid fa-info"></i>
+            </div>
+            <p id="customModalText" class="text-xs text-slate-200"></p>
+            <button onclick="closeCustomModal()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs py-2.5 rounded-xl font-medium transition">Entendido</button>
+        </div>
+    </div>
+
+    <!-- Script de Firebase Firestore en la Nube -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'cardiodiab-app-v1';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "demo-key", projectId: "demo-project", appId: "demo-app"
+        };
+
+        let app, db, auth;
+        let currentUser = null;
+        let profiles = [];
+        let records = [];
+        let activeProfileId = null;
+        let bpChart = null;
+        let sugarChart = null;
+
+        window.showModal = function(msg, isError = false) {
+            const modal = document.getElementById('customModal');
+            const txt = document.getElementById('customModalText');
+            const icon = document.getElementById('customModalIcon');
+            txt.textContent = msg;
+            if (isError) {
+                icon.className = "w-10 h-10 rounded-full bg-rose-600/20 text-rose-400 mx-auto flex items-center justify-center text-lg";
+                icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+            } else {
+                icon.className = "w-10 h-10 rounded-full bg-emerald-600/20 text-emerald-400 mx-auto flex items-center justify-center text-lg";
+                icon.innerHTML = '<i class="fa-solid fa-check"></i>';
+            }
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        };
+
+        window.closeCustomModal = function() {
+            document.getElementById('customModal').classList.remove('flex');
+            document.getElementById('customModal').classList.add('hidden');
+        };
+
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+
+            const initAuth = async () => {
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (e) {
+                    await signInAnonymously(auth);
+                }
+            };
+            initAuth();
+
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    currentUser = user;
+                    document.getElementById('userIdDisplay').textContent = user.uid;
+                    initRealtimeListeners();
+                }
+            });
+        } catch (e) {
+            document.getElementById('cloudSyncStatus').innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> Modo local';
+        }
+
+        function initRealtimeListeners() {
+            if (!currentUser) return;
+
+            // Ruta de Firestore segura en la nube (Regla estricta aplicada)
+            const profilesCol = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'profiles');
+            onSnapshot(profilesCol, (snapshot) => {
+                profiles = [];
+                snapshot.forEach(docSnap => {
+                    profiles.push({ id: docSnap.id, ...docSnap.data() });
+                });
+
+                if (profiles.length === 0) {
+                    const defaultProfile = { name: 'Mi Perfil', dx: 'Hipertensión / Diabetes', weight: 75, height: 1.70 };
+                    const newDocRef = doc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'profiles'));
+                    setDoc(newDocRef, defaultProfile);
+                } else {
+                    if (!activeProfileId || !profiles.some(p => p.id === activeProfileId)) {
+                        activeProfileId = profiles[0].id;
+                    }
+                    updateUI();
+                }
+            });
+
+            const recordsCol = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'records');
+            onSnapshot(recordsCol, (snapshot) => {
+                records = [];
+                snapshot.forEach(docSnap => {
+                    records.push({ id: docSnap.id, ...docSnap.data() });
+                });
+                records.sort((a, b) => new Date(b.date) - new Date(a.date));
+                updateUI();
+            });
+        }
+
+        window.switchTab = function(tabName) {
+            ['home', 'charts', 'history', 'settings'].forEach(t => {
+                document.getElementById(`tab-${t}`).classList.add('hidden');
+                document.getElementById(`nav-btn-${t}`).className = "flex flex-col items-center justify-center w-16 h-full text-slate-400 hover:text-slate-200 transition";
+            });
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            document.getElementById(`nav-btn-${tabName}`).className = "flex flex-col items-center justify-center w-16 h-full text-indigo-400 transition";
+
+            if (tabName === 'charts') {
+                setTimeout(() => renderCharts(), 150);
+            }
+        };
+
+        window.switchProfile = function(id) {
+            activeProfileId = id;
+            updateUI();
+        };
+
+        function updateUI() {
+            const headerSelect = document.getElementById('headerProfileSelect');
+            headerSelect.innerHTML = '';
+            profiles.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.name;
+                if (p.id === activeProfileId) opt.selected = true;
+                headerSelect.appendChild(opt);
+            });
+
+            const activeProfile = profiles.find(p => p.id === activeProfileId) || profiles[0];
+            if (activeProfile) {
+                document.getElementById('activeProfileName').textContent = activeProfile.name;
+                document.getElementById('activeProfileDx').textContent = `Dx: ${activeProfile.dx || 'No especificado'}`;
+                document.getElementById('activeWeight').textContent = `${activeProfile.weight ? activeProfile.weight + ' kg' : '-'}`;
+                document.getElementById('activeHeight').textContent = `${activeProfile.height ? activeProfile.height + ' m' : '-'}`;
+                
+                if (activeProfile.weight && activeProfile.height && activeProfile.height > 0) {
+                    const bmi = (activeProfile.weight / (activeProfile.height * activeProfile.height)).toFixed(1);
+                    document.getElementById('activeBmi').textContent = bmi;
+                } else {
+                    document.getElementById('activeBmi').textContent = '-';
+                }
+            }
+
+            renderRecordsList();
+            renderProfilesList();
+            renderCharts();
+        }
+
+        window.handleRecordSubmit = async function(e) {
+            e.preventDefault();
+            if (!currentUser) return;
+
+            const date = document.getElementById('recDate').value;
+            const context = document.getElementById('recContext').value;
+            const sys = parseInt(document.getElementById('recSys').value) || null;
+            const dia = parseInt(document.getElementById('recDia').value) || null;
+            const sugar = parseInt(document.getElementById('recSugar').value) || null;
+            const symptoms = document.getElementById('recSymptoms').value;
+
+            if (!sys && !dia && !sugar) {
+                showModal('Ingrese al menos un valor de Presión o Glicemia.', true);
+                return;
+            }
+
+            const recordData = {
+                profileId: activeProfileId,
+                date,
+                context,
+                sys,
+                dia,
+                sugar,
+                symptoms: symptoms.trim()
+            };
+
+            try {
+                const newRef = doc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'records'));
+                await setDoc(newRef, recordData);
+                document.getElementById('recordForm').reset();
+                initDefaultDate();
+                showModal('¡Guardado y sincronizado en la nube!');
+                switchTab('history');
+            } catch (err) {
+                showModal('Error al sincronizar con la nube.', true);
+            }
+        };
+
+        window.deleteRecord = async function(id) {
+            if (!currentUser) return;
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'records', id));
+                showModal('Registro eliminado.');
+            } catch (err) {
+                showModal('Error al eliminar.', true);
+            }
+        };
+
+        function renderRecordsList() {
+            const container = document.getElementById('recordsListContainer');
+            container.innerHTML = '';
+            const filtered = records.filter(r => r.profileId === activeProfileId);
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="text-center py-8 text-slate-500 text-xs">No hay registros en la nube para este perfil.</div>`;
+                return;
+            }
+
+            filtered.forEach(r => {
+                const dateStr = new Date(r.date).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' });
+                const div = document.createElement('div');
+                div.className = "bg-slate-900/60 p-3 rounded-xl border border-slate-700/50 flex justify-between items-center";
+                div.innerHTML = `
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] bg-indigo-950 text-indigo-300 px-2 py-0.5 rounded font-medium">${r.context}</span>
+                            <span class="text-[11px] text-slate-400">${dateStr}</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-xs font-semibold">
+                            ${r.sys && r.dia ? `<span class="text-rose-400"><i class="fa-solid fa-heart-pulse"></i> ${r.sys}/${r.dia} mmHg</span>` : ''}
+                            ${r.sugar ? `<span class="text-amber-400"><i class="fa-solid fa-droplet"></i> ${r.sugar} mg/dL</span>` : ''}
+                        </div>
+                        ${r.symptoms ? `<p class="text-[11px] text-slate-400 italic">Nota: ${r.symptoms}</p>` : ''}
+                    </div>
+                    <button onclick="deleteRecord('${r.id}')" class="text-slate-500 hover:text-rose-400 p-2 transition">
+                        <i class="fa-solid fa-trash-can text-xs"></i>
+                    </button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        window.openProfileModal = function(isEdit = false) {
+            const modal = document.getElementById('profileModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            if (isEdit) {
+                document.getElementById('profileModalTitle').textContent = 'Editar Perfil';
+                const p = profiles.find(x => x.id === activeProfileId);
+                document.getElementById('pModalId').value = p.id;
+                document.getElementById('pModalName').value = p.name;
+                document.getElementById('pModalDx').value = p.dx || '';
+                document.getElementById('pModalWeight').value = p.weight || '';
+                document.getElementById('pModalHeight').value = p.height || '';
+            } else {
+                document.getElementById('profileModalTitle').textContent = 'Nuevo Perfil de Salud';
+                document.getElementById('profileForm').reset();
+                document.getElementById('pModalId').value = '';
+            }
+        };
+
+        window.openEditProfileModal = function() { openProfileModal(true); };
+        window.closeProfileModal = function() {
+            document.getElementById('profileModal').classList.remove('flex');
+            document.getElementById('profileModal').classList.add('hidden');
+        };
+
+        window.handleProfileSubmit = async function(e) {
+            e.preventDefault();
+            if (!currentUser) return;
+            const id = document.getElementById('pModalId').value;
+            const name = document.getElementById('pModalName').value;
+            const dx = document.getElementById('pModalDx').value;
+            const weight = parseFloat(document.getElementById('pModalWeight').value) || null;
+            const height = parseFloat(document.getElementById('pModalHeight').value) || null;
+            const profileData = { name, dx, weight, height };
+
+            try {
+                if (id) {
+                    await setDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profiles', id), profileData, { merge: true });
+                } else {
+                    const newRef = doc(collection(db, 'artifacts', appId, 'users', currentUser.uid, 'profiles'));
+                    await setDoc(newRef, profileData);
+                    activeProfileId = newRef.id;
+                }
+                closeProfileModal();
+                showModal('Perfil sincronizado con éxito.');
+            } catch (err) {
+                showModal('Error al guardar perfil.', true);
+            }
+        };
+
+        window.deleteProfile = async function(id) {
+            if (profiles.length <= 1) {
+                showModal('Debe mantener al menos un perfil.', true);
+                return;
+            }
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'profiles', id));
+                activeProfileId = profiles[0].id !== id ? profiles[0].id : profiles[1].id;
+                showModal('Perfil eliminado.');
+            } catch (err) {
+                showModal('Error al eliminar.', true);
+            }
+        };
+
+        function renderProfilesList() {
+            const container = document.getElementById('profilesListContainer');
+            container.innerHTML = '';
+            profiles.forEach(p => {
+                const div = document.createElement('div');
+                div.className = `p-3 rounded-xl border flex justify-between items-center ${p.id === activeProfileId ? 'bg-indigo-950/40 border-indigo-500/50' : 'bg-slate-900/60 border-slate-700/50'}`;
+                div.innerHTML = `
+                    <div>
+                        <h4 class="text-xs font-bold text-white">${p.name} ${p.id === activeProfileId ? '<span class="text-[9px] bg-indigo-600 text-white px-1.5 py-0.5 rounded ml-1">Activo</span>' : ''}</h4>
+                        <p class="text-[11px] text-slate-400">Dx: ${p.dx || '-'}</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="switchProfile('${p.id}'); switchTab('home');" class="text-xs bg-slate-700 hover:bg-slate-600 px-2.5 py-1 rounded-lg text-slate-200 transition">Ver</button>
+                        <button onclick="deleteProfile('${p.id}')" class="text-slate-500 hover:text-rose-400 p-1 transition"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        window.renderCharts = function() {
+            const period = document.getElementById('chartPeriodSelect').value;
+            const filtered = records.filter(r => r.profileId === activeProfileId);
+            let dataSubset = [...filtered];
+            if (period !== 'all') {
+                const days = parseInt(period);
+                const cutoff = new Date();
+                cutoff.setDate(cutoff.getDate() - days);
+                dataSubset = filtered.filter(r => new Date(r.date) >= cutoff);
+            }
+            dataSubset.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            const labels = dataSubset.map(r => new Date(r.date).toLocaleDateString('es-ES', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }));
+            const sysData = dataSubset.map(r => r.sys);
+            const diaData = dataSubset.map(r => r.dia);
+            const sugarData = dataSubset.map(r => r.sugar);
+
+            const bpCtx = document.getElementById('bpCanvas').getContext('2d');
+            if (bpChart) bpChart.destroy();
+            bpChart = new Chart(bpCtx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        { label: 'Sistólica', data: sysData, borderColor: '#f43f5e', backgroundColor: '#f43f5e', tension: 0.2, borderWidth: 2 },
+                        { label: 'Diastólica', data: diaData, borderColor: '#38bdf8', backgroundColor: '#38bdf8', tension: 0.2, borderWidth: 2 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#cbd5e1', font: { size: 10 } } } },
+                    scales: {
+                        x: { ticks: { color: '#94a3b8', font: { size: 9 } }, grid: { color: '#334155' } },
+                        y: { ticks: { color: '#94a3b8', font: { size: 9 } }, grid: { color: '#334155' } }
+                    }
+                }
+            });
+
+            const sugarCtx = document.getElementById('sugarCanvas').getContext('2d');
+            if (sugarChart) sugarChart.destroy();
+            sugarChart = new Chart(sugarCtx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        { label: 'Glicemia (mg/dL)', data: sugarData, borderColor: '#fbbf24', backgroundColor: 'rgba(251, 191, 36, 0.1)', tension: 0.2, fill: true, borderWidth: 2 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#cbd5e1', font: { size: 10 } } } },
+                    scales: {
+                        x: { ticks: { color: '#94a3b8', font: { size: 9 } }, grid: { color: '#334155' } },
+                        y: { ticks: { color: '#94a3b8', font: { size: 9 } }, grid: { color: '#334155' } }
+                    }
+                }
+            });
+        };
+
+        window.generatePDFReport = function() {
+            const activeProfile = profiles.find(p => p.id === activeProfileId) || profiles[0];
+            const filteredRecords = records.filter(r => r.profileId === activeProfileId);
+            if (filteredRecords.length === 0) {
+                showModal('No hay registros suficientes para exportar.', true);
+                return;
+            }
+
+            document.getElementById('pdfReportDate').textContent = new Date().toLocaleDateString('es-ES', { dateStyle: 'long', timeStyle: 'short' });
+            document.getElementById('pdfPatientName').textContent = activeProfile.name || '-';
+            document.getElementById('pdfPatientDx').textContent = activeProfile.dx || 'No especificado';
+            document.getElementById('pdfPatientWeight').textContent = activeProfile.weight ? activeProfile.weight + ' kg' : '-';
+            
+            let bmiText = '-';
+            if (activeProfile.weight && activeProfile.height && activeProfile.height > 0) {
+                const bmi = (activeProfile.weight / (activeProfile.height * activeProfile.height)).toFixed(1);
+                bmiText = `${activeProfile.height} m (IMC: ${bmi})`;
+            }
+            document.getElementById('pdfPatientBmi').textContent = bmiText;
+
+            const sysValues = filteredRecords.filter(r => r.sys).map(r => r.sys);
+            const diaValues = filteredRecords.filter(r => r.dia).map(r => r.dia);
+            const sugarValues = filteredRecords.filter(r => r.sugar).map(r => r.sugar);
+
+            const avgSys = sysValues.length > 0 ? Math.round(sysValues.reduce((a,b)=>a+b, 0) / sysValues.length) : '-';
+            const avgDia = diaValues.length > 0 ? Math.round(diaValues.reduce((a,b)=>a+b, 0) / diaValues.length) : '-';
+            const avgSugar = sugarValues.length > 0 ? Math.round(sugarValues.reduce((a,b)=>a+b, 0) / sugarValues.length) : '-';
+
+            document.getElementById('pdfAvgBp').textContent = (avgSys !== '-' && avgDia !== '-') ? `${avgSys} / ${avgDia} mmHg` : 'Sin datos';
+            document.getElementById('pdfAvgSugar').textContent = avgSugar !== '-' ? `${avgSugar} mg/dL` : 'Sin datos';
+
+            const pdfTableBody = document.getElementById('pdfTableBody');
+            pdfTableBody.innerHTML = '';
+            filteredRecords.forEach(r => {
+                const dateStr = new Date(r.date).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' });
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; color: #334155;">${dateStr}</td>
+                    <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; color: #475569;">${r.context}</td>
+                    <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: #e11d48;">${r.sys && r.dia ? r.sys + '/' + r.dia + ' mmHg' : '-'}</td>
+                    <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: #d97706;">${r.sugar ? r.sugar + ' mg/dL' : '-'}</td>
+                    <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; color: #64748b;">${r.symptoms || '-'}</td>
+                `;
+                pdfTableBody.appendChild(tr);
+            });
+
+            const element = document.getElementById('pdfReportTemplate');
+            element.classList.remove('hidden');
+
+            const opt = {
+                margin: 10,
+                filename: `Reporte_Medico_${activeProfile.name.replace(/\s+/g, '_')}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            showModal('Generando reporte PDF profesional...');
+            html2pdf().from(element).set(opt).save().then(() => {
+                element.classList.add('hidden');
+                showModal('¡Reporte PDF descargado con éxito!');
+            }).catch(() => {
+                element.classList.add('hidden');
+                showModal('Error al generar PDF.', true);
+            });
+        };
+
+        function initDefaultDate() {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('recDate').value = now.toISOString().slice(0, 16);
+        }
+
+        window.onload = function() {
+            initDefaultDate();
+        };
+    </script>
+</body>
+</html>
