@@ -1,5 +1,5 @@
-// Service Worker PWA - Versión 1.1
-const CACHE_NAME = 'salud-pwa-cache-v1.1';
+// Service Worker PWA - Versión 1.2
+const CACHE_NAME = 'salud-pwa-cache-v1.2';
 const ASSETS_TO_CACHE = [
   './index.html',
   './manifest.json',
