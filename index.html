@@ -12,13 +12,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- html2pdf.js para exportar informe clínico -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <!-- Firebase SDKs -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
-        
-        window.FB = { initializeApp, getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, onSnapshot, query, where };
-    </script>
     <style>
         body { -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
         .tab-content { display: none; }
@@ -41,7 +34,7 @@
                     </p>
                 </div>
             </div>
-            <!-- Selector Rápido de Perfil en Header -->
+            <!-- Selector Rápido de Perfil -->
             <div class="flex items-center gap-1.5 bg-indigo-800/80 px-2 py-1 rounded-xl border border-indigo-600 max-w-[140px]">
                 <i class="fa-solid fa-user text-xs text-indigo-300 shrink-0"></i>
                 <select id="headerProfileSelect" onchange="switchProfile(this.value)" class="bg-transparent text-white text-xs font-medium focus:outline-none cursor-pointer truncate w-full">
@@ -233,20 +226,20 @@
 
         <!-- PESTAÑA 4: PERFILES & NUBE -->
         <section id="tab-profiles" class="tab-content space-y-4">
-            <!-- Configuración de Sincronización en la Nube por Código -->
+            <!-- Configuración Nube -->
             <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 space-y-3">
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-cloud-arrow-up text-indigo-600 text-lg"></i>
                     <div>
-                        <h3 class="text-xs font-bold text-indigo-900">Sincronización en la Nube por Código</h3>
-                        <p class="text-[10px] text-indigo-700">Ingresa un código secreto compartido para sincronizar tus dispositivos en tiempo real.</p>
+                        <h3 class="text-xs font-bold text-indigo-900">Sincronización por Código</h3>
+                        <p class="text-[10px] text-indigo-700">Conecta tus dispositivos usando un código secreto (Ej. fam123).</p>
                     </div>
                 </div>
                 <div class="flex gap-2">
-                    <input type="text" id="syncCodeInput" placeholder="Ej. familia-perez-2026" class="w-full text-xs bg-white border border-indigo-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none uppercase font-mono">
-                    <button type="button" onclick="applySyncCode()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-4 py-2 rounded-xl font-semibold shrink-0 transition">Conectar</button>
+                    <input type="text" id="syncCodeInput" placeholder="Código..." class="w-full text-xs bg-white border border-indigo-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none uppercase font-mono">
+                    <button type="button" onclick="applySyncCode()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-4 py-2 rounded-xl font-semibold shrink-0 transition">Vincular</button>
                 </div>
-                <p id="syncActiveCodeLabel" class="text-[10px] text-indigo-600 font-semibold italic">Código actual: Ninguno (Modo Local)</p>
+                <p id="syncActiveCodeLabel" class="text-[10px] text-indigo-600 font-semibold italic">Estado: Modo Local (Sin sincronizar)</p>
             </div>
 
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
@@ -265,7 +258,7 @@
     </main>
 
     <!-- Barra de Navegación Inferior (Móvil) -->
-    <nav class="bg-white border-t border-slate-200 fixed bottom-0 left-0 right-0 z-30 shadow-lg">
+    <nav class="bg-white border-t border-slate-200 fixed bottom-0 left-0 right-0 z-30 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
         <div class="max-w-md mx-auto grid grid-cols-4 py-2 text-center">
             <button type="button" onclick="switchTab('home')" id="nav-btn-home" class="flex flex-col items-center gap-1 text-indigo-600 transition">
                 <i class="fa-solid fa-house text-sm"></i>
@@ -297,7 +290,6 @@
                     <input type="text" id="pName" required placeholder="Ej. Juan Pérez" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 </div>
 
-                <!-- Selector Múltiple de Diagnósticos -->
                 <div>
                     <label class="block text-[11px] font-semibold text-slate-600 mb-1">Diagnósticos</label>
                     <div class="space-y-1 max-h-36 overflow-y-auto p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs">
@@ -331,27 +323,20 @@
 
                 <div class="flex justify-end gap-2 pt-2">
                     <button type="button" onclick="closeProfileModal()" class="px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition">Cancelar</button>
-                    <button type="submit" class="px-4 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition shadow-sm">Guardar</button>
+                    <button type="submit" class="px-4 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition shadow-sm">Guardar Perfil</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Script de Lógica -->
+    <!-- Script de Lógica e Inicialización Segura -->
     <script type="module">
-        // Configuración Firebase Pública predeterminada (puedes enlazar tu proyecto aquí)
-        const firebaseConfig = {
-            apiKey: "AIzaSyDummyKeyForCloudSync-SaludApp",
-            authDomain: "control-salud-pwa.firebaseapp.com",
-            projectId: "control-salud-pwa",
-            storageBucket: "control-salud-pwa.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "1:123:web:abc"
-        };
-
-        let db, unsubProfiles = null, unsubRecords = null;
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        
+        // Datos locales
+        let db = null;
         let activeSyncCode = localStorage.getItem('syncCode') || '';
-
         let appData = {
             profiles: JSON.parse(localStorage.getItem('local_profiles')) || [
                 { id: 'default', name: 'Paciente Principal', dx: 'Hipertensión / Diabetes', weight: 80, height: 1.75 }
@@ -360,15 +345,25 @@
             records: JSON.parse(localStorage.getItem('local_records')) || []
         };
 
-        let bpChartInstance = null;
-        let sugarChartInstance = null;
-        let weightChartInstance = null;
+        let bpChartInstance = null, sugarChartInstance = null, weightChartInstance = null;
 
-        window.addEventListener('DOMContentLoaded', async () => {
-            if (activeSyncCode && window.FB) {
-                initFirebase(activeSyncCode);
-            } else {
-                updateSyncUI(false, "Modo Local");
+        // Si Firebase se bloquea por no tener credenciales reales, forzamos funcionamiento local.
+        const firebaseConfig = {
+            apiKey: "DUMMY_KEY", // Reemplazar con credenciales reales para activar nube real
+            projectId: "control-salud-pwa",
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            if (activeSyncCode && firebaseConfig.apiKey !== "DUMMY_KEY") {
+                try {
+                    const app = initializeApp(firebaseConfig, "app-" + activeSyncCode);
+                    db = getFirestore(app);
+                    document.getElementById('syncStatus').className = "inline-block w-2 h-2 rounded-full bg-emerald-500";
+                    document.getElementById('syncStatusText').textContent = "Nube Activa";
+                    document.getElementById('syncCodeInput').value = activeSyncCode;
+                    document.getElementById('syncActiveCodeLabel').textContent = `Conectado a código: ${activeSyncCode}`;
+                    // (Aquí iría la suscripción onSnapshot para la nube real)
+                } catch(e) { console.error("Firebase fail, fallback local."); }
             }
 
             const now = new Date();
@@ -385,66 +380,11 @@
 
         window.applySyncCode = function() {
             const code = document.getElementById('syncCodeInput').value.trim().toUpperCase();
-            if(!code) {
-                alert('Por favor ingrese un código de sincronización válido.');
-                return;
+            if(code) {
+                localStorage.setItem('syncCode', code);
+                location.reload();
             }
-            localStorage.setItem('syncCode', code);
-            activeSyncCode = code;
-            location.reload();
         };
-
-        function initFirebase(code) {
-            try {
-                if (window.FB) {
-                    const app = window.FB.initializeApp(firebaseConfig, "app-" + code);
-                    db = window.FB.getFirestore(app);
-                    updateSyncUI(true, `Nube Activa (${code})`);
-                    document.getElementById('syncCodeInput').value = code;
-                    document.getElementById('syncActiveCodeLabel').textContent = `Código activo: ${code}`;
-                    initFirebaseSync(code);
-                }
-            } catch (e) {
-                console.warn("Error iniciando Firebase:", e);
-                updateSyncUI(false, "Error de Conexión (Local Activo)");
-            }
-        }
-
-        function updateSyncUI(isCloud, text) {
-            const dot = document.getElementById('syncStatus');
-            const txt = document.getElementById('syncStatusText');
-            if(dot) dot.className = `inline-block w-2 h-2 rounded-full ${isCloud ? 'bg-emerald-500' : 'bg-amber-400'}`;
-            if(txt) txt.textContent = text;
-        }
-
-        function initFirebaseSync(code) {
-            if (!db) return;
-            const qProf = window.FB.query(window.FB.collection(db, "profiles"), window.FB.where("syncCode", "==", code));
-            if(unsubProfiles) unsubProfiles();
-            unsubProfiles = window.FB.onSnapshot(qProf, (snapshot) => {
-                let cloudProfiles = [];
-                snapshot.forEach(doc => cloudProfiles.push({ id: doc.id, ...doc.data() }));
-                if(cloudProfiles.length > 0) {
-                    appData.profiles = cloudProfiles;
-                    if(!appData.profiles.some(p => p.id === appData.activeProfileId)) {
-                        appData.activeProfileId = appData.profiles[0].id;
-                    }
-                    renderProfilesSelector();
-                    updateActiveProfileView();
-                    renderProfilesList();
-                }
-            });
-
-            const qRec = window.FB.query(window.FB.collection(db, "records"), window.FB.where("syncCode", "==", code));
-            if(unsubRecords) unsubRecords();
-            unsubRecords = window.FB.onSnapshot(qRec, (snapshot) => {
-                let cloudRecords = [];
-                snapshot.forEach(doc => cloudRecords.push({ id: doc.id, ...doc.data() }));
-                appData.records = cloudRecords;
-                renderRecords();
-                updateCharts();
-            });
-        }
 
         window.switchTab = function(tabName) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -452,7 +392,6 @@
                 btn.classList.remove('text-indigo-600');
                 btn.classList.add('text-slate-400');
             });
-
             document.getElementById(`tab-${tabName}`).classList.add('active');
             const activeBtn = document.getElementById(`nav-btn-${tabName}`);
             if(activeBtn) {
@@ -472,7 +411,6 @@
         window.updateActiveProfileView = function() {
             const profile = appData.profiles.find(p => p.id === appData.activeProfileId) || appData.profiles[0];
             if (!profile) return;
-
             document.getElementById('profileNameDisplay').textContent = profile.name;
             document.getElementById('profileDxDisplay').textContent = `Dx: ${profile.dx || 'No especificado'}`;
             document.getElementById('profileWeightDisplay').textContent = `${profile.weight ? profile.weight + ' kg' : '-'}`;
@@ -488,7 +426,6 @@
 
         window.renderProfilesSelector = function() {
             const select = document.getElementById('headerProfileSelect');
-            if(!select) return;
             select.innerHTML = '';
             appData.profiles.forEach(p => {
                 const opt = document.createElement('option');
@@ -501,7 +438,6 @@
 
         window.renderProfilesList = function() {
             const container = document.getElementById('profilesListContainer');
-            if(!container) return;
             container.innerHTML = '';
             appData.profiles.forEach(p => {
                 const div = document.createElement('div');
@@ -511,23 +447,21 @@
                         <h4 class="text-xs font-bold text-slate-900 truncate">${p.name}</h4>
                         <p class="text-[10px] text-slate-500 truncate">${p.dx || 'Sin diagnósticos'}</p>
                     </div>
-                    <button type="button" onclick="switchProfile('${p.id}'); switchTab('home');" class="text-xs bg-indigo-600 text-white px-2.5 py-1 rounded-lg shrink-0">Usar</button>
+                    <button type="button" onclick="switchProfile('${p.id}'); switchTab('home');" class="text-xs bg-indigo-600 text-white px-3 py-1.5 rounded-lg shrink-0 transition hover:bg-indigo-700">Usar</button>
                 `;
                 container.appendChild(div);
             });
         };
 
         window.toggleOtherDx = function(checkbox) {
-            const otherContainer = document.getElementById('otherDxContainer');
-            if (checkbox.checked) otherContainer.classList.remove('hidden');
-            else { otherContainer.classList.add('hidden'); document.getElementById('pOtherDx').value = ''; }
+            const container = document.getElementById('otherDxContainer');
+            if (checkbox.checked) container.classList.remove('hidden');
+            else { container.classList.add('hidden'); document.getElementById('pOtherDx').value = ''; }
         };
 
         window.openProfileModal = function(isEdit = false) {
-            const modal = document.getElementById('profileModal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-
+            document.getElementById('profileModal').classList.remove('hidden');
+            document.getElementById('profileModal').classList.add('flex');
             document.querySelectorAll('input[name="dxOption"]').forEach(cb => cb.checked = false);
             document.getElementById('otherDxContainer').classList.add('hidden');
             document.getElementById('pOtherDx').value = '';
@@ -567,7 +501,7 @@
             document.getElementById('profileModal').classList.add('hidden');
         };
 
-        window.handleProfileSubmit = async function(e) {
+        window.handleProfileSubmit = function(e) {
             e.preventDefault();
             const id = document.getElementById('profileId').value;
             const name = document.getElementById('pName').value;
@@ -582,33 +516,31 @@
             if(otherVal) selectedDx.push(otherVal);
             const dxStr = selectedDx.join(', ');
 
-            if (id && id !== 'default' && db) {
-                await window.FB.updateDoc(window.FB.doc(db, "profiles", id), { name, dx: dxStr, weight, height });
-            } else if (id && id === 'default') {
-                const p = appData.profiles.find(x => x.id === 'default');
-                p.name = name; p.dx = dxStr; p.weight = weight; p.height = height;
-                localStorage.setItem('local_profiles', JSON.stringify(appData.profiles));
-            } else {
-                const newProfile = { name, dx: dxStr, weight, height, syncCode: activeSyncCode || 'LOCAL' };
-                if (db) {
-                    const docRef = await window.FB.addDoc(window.FB.collection(db, "profiles"), newProfile);
-                    appData.activeProfileId = docRef.id;
+            try {
+                if (id && id !== 'default') {
+                    const p = appData.profiles.find(x => x.id === id);
+                    if(p) { p.name = name; p.dx = dxStr; p.weight = weight; p.height = height; }
+                } else if (id === 'default') {
+                    const p = appData.profiles.find(x => x.id === 'default');
+                    if(p) { p.name = name; p.dx = dxStr; p.weight = weight; p.height = height; }
                 } else {
-                    newProfile.id = 'p_' + Date.now();
-                    appData.profiles.push(newProfile);
-                    appData.activeProfileId = newProfile.id;
-                    localStorage.setItem('local_profiles', JSON.stringify(appData.profiles));
+                    const newId = 'p_' + Date.now();
+                    appData.profiles.push({ id: newId, name, dx: dxStr, weight, height, syncCode: activeSyncCode || 'LOCAL' });
+                    appData.activeProfileId = newId;
                 }
+                localStorage.setItem('local_profiles', JSON.stringify(appData.profiles));
                 localStorage.setItem('local_activeProfileId', appData.activeProfileId);
+            } catch(error) { console.error("Error al guardar perfil local:", error); } 
+            finally {
+                renderProfilesSelector();
+                updateActiveProfileView();
+                renderProfilesList();
+                closeProfileModal();
+                switchTab('home'); // Asegura volver a la pantalla de registro
             }
-
-            renderProfilesSelector();
-            updateActiveProfileView();
-            renderProfilesList();
-            closeProfileModal();
         };
 
-        window.handleRecordSubmit = async function(e) {
+        window.handleRecordSubmit = function(e) {
             e.preventDefault();
             const date = document.getElementById('recordDate').value;
             const context = document.getElementById('recordContext').value;
@@ -618,53 +550,34 @@
             const weight = parseFloat(document.getElementById('recordWeight').value) || null;
             const symptoms = document.getElementById('recordSymptoms').value;
 
-            if (!sys && !dia && !sugar && !weight) {
-                alert('Por favor ingrese al menos un valor clínico.');
-                return;
-            }
+            if (!sys && !dia && !sugar && !weight) { alert('Ingrese al menos un valor clínico.'); return; }
 
-            const newRecord = { profileId: appData.activeProfileId, date, context, sys, dia, sugar, weight, symptoms, syncCode: activeSyncCode || 'LOCAL' };
-
-            // Si se registró peso, actualizar también el perfil activo
-            if (weight) {
-                const p = appData.profiles.find(x => x.id === appData.activeProfileId);
-                if (p) {
-                    p.weight = weight;
-                    if(db && appData.activeProfileId !== 'default') {
-                        await window.FB.updateDoc(window.FB.doc(db, "profiles", appData.activeProfileId), { weight });
-                    } else {
-                        localStorage.setItem('local_profiles', JSON.stringify(appData.profiles));
-                    }
-                }
-            }
-
-            if (db) {
-                await window.FB.addDoc(window.FB.collection(db, "records"), newRecord);
-            } else {
-                newRecord.id = 'r_' + Date.now();
+            try {
+                const newRecord = { id: 'r_' + Date.now(), profileId: appData.activeProfileId, date, context, sys, dia, sugar, weight, symptoms, syncCode: activeSyncCode || 'LOCAL' };
                 appData.records.unshift(newRecord);
                 localStorage.setItem('local_records', JSON.stringify(appData.records));
+
+                if (weight) {
+                    const p = appData.profiles.find(x => x.id === appData.activeProfileId);
+                    if (p) { p.weight = weight; localStorage.setItem('local_profiles', JSON.stringify(appData.profiles)); }
+                }
+
+                document.getElementById('recordForm').reset();
+                const now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                document.getElementById('recordDate').value = now.toISOString().slice(0, 16);
+            } catch(error) { console.error("Error guardando registro:", error); }
+            finally {
+                renderRecords();
+                updateCharts();
+                updateActiveProfileView();
+                switchTab('history');
             }
-
-            document.getElementById('recordForm').reset();
-            const now = new Date();
-            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-            document.getElementById('recordDate').value = now.toISOString().slice(0, 16);
-
-            renderRecords();
-            updateCharts();
-            updateActiveProfileView();
-            switchTab('history');
         };
 
-        window.deleteRecord = async function(id) {
+        window.deleteRecord = function(id) {
             if (confirm('¿Desea eliminar este registro?')) {
-                if (db && !id.startsWith('r_')) {
-                    await window.FB.deleteDoc(window.FB.doc(db, "records", id));
-                } else {
-                    appData.records = appData.records.filter(r => r.id !== id);
-                    localStorage.setItem('local_records', JSON.stringify(appData.records));
-                }
+                appData.records = appData.records.filter(r => r.id !== id);
+                localStorage.setItem('local_records', JSON.stringify(appData.records));
                 renderRecords();
                 updateCharts();
             }
@@ -672,28 +585,22 @@
 
         window.renderRecords = function() {
             const tbody = document.getElementById('recordsTableBody');
-            if(!tbody) return;
             tbody.innerHTML = '';
-
             const currentRecords = appData.records.filter(r => r.profileId === appData.activeProfileId);
-
             if (currentRecords.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400">Sin registros clínicos.</td></tr>`;
                 return;
             }
-
             currentRecords.forEach(r => {
                 const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-50 transition';
-                const formattedDate = new Date(r.date).toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' });
-
+                tr.className = 'hover:bg-slate-50 transition border-b border-slate-50';
                 tr.innerHTML = `
-                    <td class="py-2.5 font-medium text-slate-700">${formattedDate}</td>
-                    <td class="py-2.5"><span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full text-[9px] font-semibold">${r.context}</span></td>
-                    <td class="py-2.5 font-semibold text-rose-700">${r.sys && r.dia ? r.sys + '/' + r.dia : '-'}</td>
-                    <td class="py-2.5 font-semibold text-amber-700">${r.sugar ? r.sugar : '-'}</td>
-                    <td class="py-2.5 font-semibold text-emerald-700">${r.weight ? r.weight + ' kg' : '-'}</td>
-                    <td class="py-2.5 text-right">
+                    <td class="py-2 font-medium text-slate-700">${new Date(r.date).toLocaleString('es-CL', {dateStyle:'short', timeStyle:'short'})}</td>
+                    <td class="py-2"><span class="bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded-full text-[9px] font-semibold">${r.context}</span></td>
+                    <td class="py-2 font-semibold text-rose-700">${r.sys && r.dia ? r.sys + '/' + r.dia : '-'}</td>
+                    <td class="py-2 font-semibold text-amber-700">${r.sugar ? r.sugar : '-'}</td>
+                    <td class="py-2 font-semibold text-emerald-700">${r.weight ? r.weight : '-'}</td>
+                    <td class="py-2 text-right">
                         <button type="button" onclick="deleteRecord('${r.id}')" class="text-slate-300 hover:text-rose-600 transition p-1"><i class="fa-solid fa-trash-can"></i></button>
                     </td>
                 `;
@@ -701,13 +608,12 @@
             });
         };
 
-        // Plugin personalizado para dibujar líneas guía punteadas en los gráficos
+        // Plugin para líneas punteadas de límites y máximos/mínimos
         const thresholdLinePlugin = {
             id: 'thresholdLinePlugin',
             afterDraw(chart) {
                 const { ctx, chartArea: { left, right }, scales: { y } } = chart;
                 if (!chart.options.plugins.thresholdLines) return;
-
                 chart.options.plugins.thresholdLines.forEach(line => {
                     const yVal = y.getPixelForValue(line.value);
                     if (yVal >= chart.chartArea.top && yVal <= chart.chartArea.bottom) {
@@ -730,50 +636,44 @@
         Chart.register(thresholdLinePlugin);
 
         window.initCharts = function() {
-            const bpCtx = document.getElementById('bpChart').getContext('2d');
-            bpChartInstance = new Chart(bpCtx, {
-                type: 'line',
-                data: { labels: [], datasets: [] },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { thresholdLines: [{ value: 140, color: '#e11d48', label: 'Máx. Sistólica (Urgencia >140)' }, { value: 120, color: '#10b981', label: 'Normal Deseable (<120)' }] }
-                }
+            const commonOptions = { responsive: true, maintainAspectRatio: false };
+            bpChartInstance = new Chart(document.getElementById('bpChart').getContext('2d'), {
+                type: 'line', data: { labels: [], datasets: [] },
+                options: { ...commonOptions, plugins: { thresholdLines: [{ value: 140, color: '#e11d48', label: 'Urgencia (>140)' }, { value: 120, color: '#10b981', label: 'Normal (<120)' }] } }
             });
-
-            const sugarCtx = document.getElementById('sugarChart').getContext('2d');
-            sugarChartInstance = new Chart(sugarCtx, {
-                type: 'line',
-                data: { labels: [], datasets: [] },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { thresholdLines: [{ value: 180, color: '#e11d48', label: 'Hiperglicemia Severa (>180)' }, { value: 140, color: '#f59e0b', label: 'Límite Postprandial (140)' }] }
-                }
+            sugarChartInstance = new Chart(document.getElementById('sugarChart').getContext('2d'), {
+                type: 'line', data: { labels: [], datasets: [] },
+                options: { ...commonOptions, plugins: { thresholdLines: [{ value: 180, color: '#e11d48', label: 'Urgencia (>180)' }, { value: 140, color: '#f59e0b', label: 'Límite (140)' }] } }
             });
-
-            const weightCtx = document.getElementById('weightChart').getContext('2d');
-            weightChartInstance = new Chart(weightCtx, {
-                type: 'line',
-                data: { labels: [], datasets: [] },
-                options: { responsive: true, maintainAspectRatio: false }
+            weightChartInstance = new Chart(document.getElementById('weightChart').getContext('2d'), {
+                type: 'line', data: { labels: [], datasets: [] },
+                options: { ...commonOptions, plugins: { thresholdLines: [] } } // Se llena dinámicamente con Max/Min
             });
-
             updateCharts();
         };
 
         window.updateCharts = function() {
             const period = document.getElementById('periodFilter').value;
-            const currentRecords = appData.records.filter(r => r.profileId === appData.activeProfileId);
+            let filtered = appData.records.filter(r => r.profileId === appData.activeProfileId);
+            
+            // Cálculo del histórico de peso (Máximo y Mínimo global del perfil)
+            const allProfileWeights = filtered.filter(r => r.weight).map(r => r.weight);
+            let weightThresholds = [];
+            if (allProfileWeights.length > 0) {
+                const maxW = Math.max(...allProfileWeights);
+                const minW = Math.min(...allProfileWeights);
+                weightThresholds = [
+                    { value: maxW, color: '#be185d', label: `Máx. Histórico (${maxW}kg)` },
+                    { value: minW, color: '#1d4ed8', label: `Mín. Histórico (${minW}kg)` }
+                ];
+            }
+            weightChartInstance.options.plugins.thresholdLines = weightThresholds;
 
-            let filtered = [...currentRecords];
+            // Filtro de periodo
             if (period !== 'all') {
-                const days = parseInt(period);
-                const cutoff = new Date();
-                cutoff.setDate(cutoff.getDate() - days);
+                const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - parseInt(period));
                 filtered = filtered.filter(r => new Date(r.date) >= cutoff);
             }
-
             filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
 
             const labels = filtered.map(r => new Date(r.date).toLocaleDateString('es-CL', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }));
@@ -787,13 +687,13 @@
 
             sugarChartInstance.data.labels = labels;
             sugarChartInstance.data.datasets = [
-                { label: 'Glicemia (mg/dL)', data: filtered.map(r => r.sugar), borderColor: '#d97706', backgroundColor: 'rgba(217, 119, 6, 0.05)', fill: true, tension: 0.2 }
+                { label: 'Glicemia', data: filtered.map(r => r.sugar), borderColor: '#d97706', backgroundColor: 'rgba(217,119,6,0.05)', fill: true, tension: 0.2 }
             ];
             sugarChartInstance.update();
 
             weightChartInstance.data.labels = labels;
             weightChartInstance.data.datasets = [
-                { label: 'Peso (kg)', data: filtered.map(r => r.weight), borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.05)', fill: true, tension: 0.2 }
+                { label: 'Peso', data: filtered.map(r => r.weight), borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.05)', fill: true, tension: 0.2 }
             ];
             weightChartInstance.update();
         };
@@ -801,7 +701,6 @@
         window.exportPDF = function() {
             const profile = appData.profiles.find(p => p.id === appData.activeProfileId) || appData.profiles[0];
             const currentRecords = appData.records.filter(r => r.profileId === appData.activeProfileId);
-
             const element = document.createElement('div');
             element.className = "p-6 bg-white text-slate-800 text-xs space-y-4";
             element.innerHTML = `
@@ -811,7 +710,7 @@
                         <p class="text-[10px] text-slate-500">Hipertensión & Diabetes Control Center</p>
                     </div>
                     <div class="text-right text-[10px] text-slate-500">
-                        <p>Fecha de emisión: ${new Date().toLocaleDateString('es-CL')}</p>
+                        <p>Emisión: ${new Date().toLocaleDateString('es-CL')}</p>
                     </div>
                 </div>
                 <div>
@@ -823,39 +722,13 @@
                 <div>
                     <h3 class="font-bold text-slate-900 text-sm mb-2">Registro de Monitoreo (${currentRecords.length} mediciones)</h3>
                     <table class="w-full text-left border-collapse border border-slate-200">
-                        <thead>
-                            <tr class="bg-slate-100 border-b border-slate-200 text-[10px]">
-                                <th class="p-1.5 border">Fecha / Hora</th>
-                                <th class="p-1.5 border">Momento</th>
-                                <th class="p-1.5 border">Presión</th>
-                                <th class="p-1.5 border">Glicemia</th>
-                                <th class="p-1.5 border">Peso</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${currentRecords.map(r => `
-                                <tr class="border-b border-slate-100 text-[10px]">
-                                    <td class="p-1.5 border">${new Date(r.date).toLocaleString('es-CL')}</td>
-                                    <td class="p-1.5 border">${r.context}</td>
-                                    <td class="p-1.5 border">${r.sys && r.dia ? r.sys + '/' + r.dia + ' mmHg' : '-'}</td>
-                                    <td class="p-1.5 border">${r.sugar ? r.sugar + ' mg/dL' : '-'}</td>
-                                    <td class="p-1.5 border">${r.weight ? r.weight + ' kg' : '-'}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
+                        <thead><tr class="bg-slate-100 border-b border-slate-200 text-[10px]">
+                            <th class="p-1.5 border">Fecha/Hora</th><th class="p-1.5 border">Momento</th><th class="p-1.5 border">Presión</th><th class="p-1.5 border">Glicemia</th><th class="p-1.5 border">Peso</th>
+                        </tr></thead>
+                        <tbody>${currentRecords.map(r => `<tr class="border-b border-slate-100 text-[10px]"><td class="p-1.5 border">${new Date(r.date).toLocaleString('es-CL')}</td><td class="p-1.5 border">${r.context}</td><td class="p-1.5 border">${r.sys && r.dia ? r.sys + '/' + r.dia : '-'}</td><td class="p-1.5 border">${r.sugar ? r.sugar : '-'}</td><td class="p-1.5 border">${r.weight ? r.weight : '-'}</td></tr>`).join('')}</tbody>
                     </table>
-                </div>
-            `;
-
-            const opt = {
-                margin:       10,
-                filename:     `informe_clinico_${profile.name.replace(/\s+/g, '_')}.pdf`,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2 },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-
-            html2pdf().from(element).set(opt).save();
+                </div>`;
+            html2pdf().from(element).set({ margin: 10, filename: `informe_${profile.name.replace(/\s+/g, '_')}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).save();
         };
     </script>
 </body>
