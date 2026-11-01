@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <link rel="manifest" href="manifest.json">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Monitoreo Clínico de Salud - PWA</title>
@@ -16,45 +15,44 @@
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
         
-        // Exponer Firebase al ámbito global para la app
-        window.FB = { initializeApp, getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, onSnapshot };
+        window.FB = { initializeApp, getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, onSnapshot, query, where };
     </script>
     <style>
-        body { -webkit-tap-highlight-color: transparent; }
+        body { -webkit-tap-highlight-color: transparent; overflow-x: hidden; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col pb-20 md:pb-0">
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col pb-24 md:pb-6">
 
     <!-- Header Móvil Superior -->
-    <header class="bg-indigo-700 text-white shadow-md sticky top-0 z-30">
-        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
-            <div class="flex items-center gap-2.5">
+    <header class="bg-indigo-700 text-white shadow-md sticky top-0 z-30 w-full">
+        <div class="max-w-md mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-2">
                 <div class="bg-white/10 p-2 rounded-xl">
-                    <i class="fa-solid fa-heart-pulse text-xl text-rose-300"></i>
+                    <i class="fa-solid fa-heart-pulse text-lg text-rose-300"></i>
                 </div>
                 <div>
-                    <h1 class="text-base font-bold tracking-wide">Monitoreo Clínico</h1>
+                    <h1 class="text-sm font-bold tracking-wide">Monitoreo Clínico</h1>
                     <p class="text-[10px] text-indigo-200 flex items-center gap-1">
-                        <span id="syncStatus" class="inline-block w-2 h-2 rounded-full bg-amber-400"></span> Nube Sincronizada
+                        <span id="syncStatus" class="inline-block w-2 h-2 rounded-full bg-amber-400"></span> <span id="syncStatusText">Modo Local</span>
                     </p>
                 </div>
             </div>
             <!-- Selector Rápido de Perfil en Header -->
-            <div class="flex items-center gap-1.5 bg-indigo-800/80 px-2.5 py-1 rounded-xl border border-indigo-600">
-                <i class="fa-solid fa-user text-xs text-indigo-300"></i>
-                <select id="headerProfileSelect" onchange="switchProfile(this.value)" class="bg-transparent text-white text-xs font-medium focus:outline-none cursor-pointer">
+            <div class="flex items-center gap-1.5 bg-indigo-800/80 px-2 py-1 rounded-xl border border-indigo-600 max-w-[140px]">
+                <i class="fa-solid fa-user text-xs text-indigo-300 shrink-0"></i>
+                <select id="headerProfileSelect" onchange="switchProfile(this.value)" class="bg-transparent text-white text-xs font-medium focus:outline-none cursor-pointer truncate w-full">
                     <!-- Dinámico -->
                 </select>
             </div>
         </div>
     </header>
 
-    <!-- Contenido Principal con Pestañas -->
-    <main class="max-w-4xl mx-auto px-4 py-4 flex-grow w-xl w-full">
+    <!-- Contenido Principal -->
+    <main class="max-w-md mx-auto px-4 py-4 flex-grow w-full space-y-4">
 
         <!-- PESTAÑA 1: INICIO & REGISTRO -->
         <section id="tab-home" class="tab-content active space-y-4">
@@ -62,22 +60,22 @@
             <!-- Tarjeta Resumen Perfil Activo -->
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
                 <div class="flex justify-between items-start mb-2">
-                    <div>
-                        <h2 id="profileNameDisplay" class="text-base font-bold text-slate-900">Cargando perfil...</h2>
-                        <p id="profileDxDisplay" class="text-xs text-slate-500 font-medium mt-0.5">Dx: -</p>
+                    <div class="truncate pr-2">
+                        <h2 id="profileNameDisplay" class="text-sm font-bold text-slate-900 truncate">Cargando...</h2>
+                        <p id="profileDxDisplay" class="text-[11px] text-slate-500 font-medium mt-0.5 truncate">Dx: -</p>
                     </div>
-                    <div class="flex gap-2">
-                        <button type="button" onclick="openProfileModal(true)" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs px-2.5 py-1.5 rounded-lg transition font-medium flex items-center gap-1">
+                    <div class="flex gap-1 shrink-0">
+                        <button type="button" onclick="openProfileModal(true)" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] px-2 py-1 rounded-lg transition font-medium flex items-center gap-1">
                             <i class="fa-solid fa-pen"></i> Editar
                         </button>
-                        <button type="button" onclick="openProfileModal(false)" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs px-2.5 py-1.5 rounded-lg transition font-medium flex items-center gap-1">
+                        <button type="button" onclick="openProfileModal(false)" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[11px] px-2 py-1 rounded-lg transition font-medium flex items-center gap-1">
                             <i class="fa-solid fa-plus"></i> Nuevo
                         </button>
                     </div>
                 </div>
                 <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 text-center">
                     <div class="bg-slate-50 p-2 rounded-xl">
-                        <span class="block text-[9px] uppercase font-bold text-slate-400">Peso</span>
+                        <span class="block text-[9px] uppercase font-bold text-slate-400">Peso Actual</span>
                         <span id="profileWeightDisplay" class="text-xs font-semibold text-slate-700">- kg</span>
                     </div>
                     <div class="bg-slate-50 p-2 rounded-xl">
@@ -93,8 +91,8 @@
 
             <!-- Formulario de Nuevo Registro -->
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
-                <h3 class="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-file-medical text-indigo-600"></i> Registrar Presión y Glicemia
+                <h3 class="text-xs font-bold text-slate-900 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-file-medical text-indigo-600"></i> Nuevo Registro Clínico
                 </h3>
                 <form id="recordForm" onsubmit="handleRecordSubmit(event)" class="space-y-3">
                     <div class="grid grid-cols-2 gap-2">
@@ -129,10 +127,16 @@
                         </div>
                     </div>
 
-                    <!-- Glicemia -->
-                    <div class="p-3 bg-amber-50/40 rounded-xl border border-amber-100 space-y-2">
-                        <span class="text-xs font-bold text-amber-800 flex items-center gap-1.5"><i class="fa-solid fa-droplet"></i> Glicemia / Azúcar (mg/dL)</span>
-                        <input type="number" id="recordSugar" placeholder="ej. 110" class="w-full text-xs bg-white border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                    <!-- Glicemia y Peso -->
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="p-3 bg-amber-50/40 rounded-xl border border-amber-100 space-y-2">
+                            <span class="text-xs font-bold text-amber-800 flex items-center gap-1.5"><i class="fa-solid fa-droplet"></i> Glicemia (mg/dL)</span>
+                            <input type="number" id="recordSugar" placeholder="ej. 110" class="w-full text-xs bg-white border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        </div>
+                        <div class="p-3 bg-emerald-50/40 rounded-xl border border-emerald-100 space-y-2">
+                            <span class="text-xs font-bold text-emerald-800 flex items-center gap-1.5"><i class="fa-solid fa-weight-scale"></i> Peso Actual (kg)</span>
+                            <input type="number" step="0.1" id="recordWeight" placeholder="ej. 75.5" class="w-full text-xs bg-white border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        </div>
                     </div>
 
                     <div>
@@ -151,8 +155,8 @@
         <section id="tab-charts" class="tab-content space-y-4">
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
                 <div class="flex justify-between items-center mb-3">
-                    <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
-                        <i class="fa-solid fa-chart-line text-indigo-600"></i> Tendencias
+                    <h3 class="text-xs font-bold text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-line text-indigo-600"></i> Tendencias Clínicas
                     </h3>
                     <select id="periodFilter" onchange="updateCharts()" class="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none">
                         <option value="7">Últimos 7 días</option>
@@ -163,16 +167,33 @@
                 </div>
 
                 <div class="space-y-4">
+                    <!-- Gráfico Presión -->
                     <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <h4 class="text-xs font-bold text-slate-700 mb-2">Presión Arterial (mmHg)</h4>
+                        <div class="flex justify-between items-center mb-2">
+                            <h4 class="text-xs font-bold text-slate-700">Presión Arterial (mmHg)</h4>
+                            <span class="text-[10px] text-slate-400">Normal: &lt;120/80 | Urgencia: &gt;140/90</span>
+                        </div>
                         <div class="relative h-48 w-full">
                             <canvas id="bpChart"></canvas>
                         </div>
                     </div>
+                    <!-- Gráfico Glicemia -->
                     <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-                        <h4 class="text-xs font-bold text-slate-700 mb-2">Glicemia (mg/dL)</h4>
+                        <div class="flex justify-between items-center mb-2">
+                            <h4 class="text-xs font-bold text-slate-700">Glicemia (mg/dL)</h4>
+                            <span class="text-[10px] text-slate-400">Normal: 70-140 | Urgencia: &gt;180</span>
+                        </div>
                         <div class="relative h-48 w-full">
                             <canvas id="sugarChart"></canvas>
+                        </div>
+                    </div>
+                    <!-- Gráfico Peso -->
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <div class="flex justify-between items-center mb-2">
+                            <h4 class="text-xs font-bold text-slate-700">Evolución de Peso (kg)</h4>
+                        </div>
+                        <div class="relative h-44 w-full">
+                            <canvas id="weightChart"></canvas>
                         </div>
                     </div>
                 </div>
@@ -183,25 +204,23 @@
         <section id="tab-history" class="tab-content space-y-4">
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
                 <div class="flex justify-between items-center mb-3">
-                    <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    <h3 class="text-xs font-bold text-slate-900 flex items-center gap-2">
                         <i class="fa-solid fa-clock-rotate-left text-indigo-600"></i> Historial de Registros
                     </h3>
-                    <div class="flex gap-2">
-                        <button type="button" onclick="exportPDF()" class="text-xs bg-rose-50 hover:bg-rose-100 text-rose-700 px-3 py-1.5 rounded-lg transition font-medium flex items-center gap-1.5">
-                            <i class="fa-solid fa-file-pdf"></i> Reporte PDF
-                        </button>
-                    </div>
+                    <button type="button" onclick="exportPDF()" class="text-xs bg-rose-50 hover:bg-rose-100 text-rose-700 px-3 py-1.5 rounded-lg transition font-medium flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-pdf"></i> PDF
+                    </button>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs">
+                <div class="overflow-x-auto w-full">
+                    <table class="w-full text-left text-xs min-w-[320px]">
                         <thead>
-                            <tr class="border-b border-slate-100 text-slate-400 uppercase font-semibold">
-                                <th class="pb-2.5">Fecha / Hora</th>
-                                <th class="pb-2.5">Momento</th>
-                                <th class="pb-2.5">Presión</th>
-                                <th class="pb-2.5">Glicemia</th>
-                                <th class="pb-2.5">Síntomas</th>
-                                <th class="pb-2.5 text-right">Acción</th>
+                            <tr class="border-b border-slate-100 text-slate-400 uppercase font-semibold text-[10px]">
+                                <th class="pb-2">Fecha</th>
+                                <th class="pb-2">Momento</th>
+                                <th class="pb-2">Presión</th>
+                                <th class="pb-2">Glicemia</th>
+                                <th class="pb-2">Peso</th>
+                                <th class="pb-2 text-right">Acción</th>
                             </tr>
                         </thead>
                         <tbody id="recordsTableBody" class="divide-y divide-slate-100">
@@ -212,13 +231,29 @@
             </div>
         </section>
 
-        <!-- PESTAÑA 4: PERFILES & AJUSTES -->
+        <!-- PESTAÑA 4: PERFILES & NUBE -->
         <section id="tab-profiles" class="tab-content space-y-4">
+            <!-- Configuración de Sincronización en la Nube por Código -->
+            <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 space-y-3">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-cloud-arrow-up text-indigo-600 text-lg"></i>
+                    <div>
+                        <h3 class="text-xs font-bold text-indigo-900">Sincronización en la Nube por Código</h3>
+                        <p class="text-[10px] text-indigo-700">Ingresa un código secreto compartido para sincronizar tus dispositivos en tiempo real.</p>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <input type="text" id="syncCodeInput" placeholder="Ej. familia-perez-2026" class="w-full text-xs bg-white border border-indigo-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none uppercase font-mono">
+                    <button type="button" onclick="applySyncCode()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-4 py-2 rounded-xl font-semibold shrink-0 transition">Conectar</button>
+                </div>
+                <p id="syncActiveCodeLabel" class="text-[10px] text-indigo-600 font-semibold italic">Código actual: Ninguno (Modo Local)</p>
+            </div>
+
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
-                <h3 class="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
+                <h3 class="text-xs font-bold text-slate-900 mb-3 flex items-center gap-2">
                     <i class="fa-solid fa-users text-indigo-600"></i> Gestión de Perfiles
                 </h3>
-                <div id="profilesListContainer" class="space-y-2 mb-4">
+                <div id="profilesListContainer" class="space-y-2 mb-3">
                     <!-- Dinámico -->
                 </div>
                 <button type="button" onclick="openProfileModal(false)" class="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-2">
@@ -231,30 +266,30 @@
 
     <!-- Barra de Navegación Inferior (Móvil) -->
     <nav class="bg-white border-t border-slate-200 fixed bottom-0 left-0 right-0 z-30 shadow-lg">
-        <div class="max-w-4xl mx-auto grid grid-cols-4 py-2 text-center">
+        <div class="max-w-md mx-auto grid grid-cols-4 py-2 text-center">
             <button type="button" onclick="switchTab('home')" id="nav-btn-home" class="flex flex-col items-center gap-1 text-indigo-600 transition">
-                <i class="fa-solid fa-house text-base"></i>
+                <i class="fa-solid fa-house text-sm"></i>
                 <span class="text-[10px] font-semibold">Registro</span>
             </button>
             <button type="button" onclick="switchTab('charts')" id="nav-btn-charts" class="flex flex-col items-center gap-1 text-slate-400 hover:text-indigo-600 transition">
-                <i class="fa-solid fa-chart-line text-base"></i>
+                <i class="fa-solid fa-chart-line text-sm"></i>
                 <span class="text-[10px] font-semibold">Gráficos</span>
             </button>
             <button type="button" onclick="switchTab('history')" id="nav-btn-history" class="flex flex-col items-center gap-1 text-slate-400 hover:text-indigo-600 transition">
-                <i class="fa-solid fa-clock-rotate-left text-base"></i>
+                <i class="fa-solid fa-clock-rotate-left text-sm"></i>
                 <span class="text-[10px] font-semibold">Historial</span>
             </button>
             <button type="button" onclick="switchTab('profiles')" id="nav-btn-profiles" class="flex flex-col items-center gap-1 text-slate-400 hover:text-indigo-600 transition">
-                <i class="fa-solid fa-users text-base"></i>
+                <i class="fa-solid fa-users text-sm"></i>
                 <span class="text-[10px] font-semibold">Perfiles</span>
             </button>
         </div>
     </nav>
 
-    <!-- Modal para Crear / Editar Perfil (Con Selector Múltiple de Diagnósticos) -->
+    <!-- Modal para Crear / Editar Perfil -->
     <div id="profileModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center z-50 p-4 overflow-y-auto">
-        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-5 space-y-4 my-auto">
-            <h3 id="profileModalTitle" class="text-base font-bold text-slate-900">Crear Nuevo Perfil</h3>
+        <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-5 space-y-3 my-auto max-h-[90vh] overflow-y-auto">
+            <h3 id="profileModalTitle" class="text-sm font-bold text-slate-900">Crear Nuevo Perfil</h3>
             <form id="profileForm" onsubmit="handleProfileSubmit(event)" class="space-y-3">
                 <input type="hidden" id="profileId">
                 <div>
@@ -264,58 +299,59 @@
 
                 <!-- Selector Múltiple de Diagnósticos -->
                 <div>
-                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Diagnósticos (Seleccione uno o varios)</label>
-                    <div class="space-y-1.5 max-h-40 overflow-y-auto p-2 bg-slate-50 border border-slate-200 rounded-xl">
-                        <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer"><input type="checkbox" name="dxOption" value="Diabetes Tipo 1" class="rounded text-indigo-600"> Diabetes Tipo 1</label>
-                        <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer"><input type="checkbox" name="dxOption" value="Diabetes Tipo 2" class="rounded text-indigo-600"> Diabetes Tipo 2</label>
-                        <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer"><input type="checkbox" name="dxOption" value="Hipertensión" class="rounded text-indigo-600"> Hipertensión</label>
-                        <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer"><input type="checkbox" name="dxOption" value="Depresión" class="rounded text-indigo-600"> Depresión</label>
-                        <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer"><input type="checkbox" name="dxOption" value="Síndrome de Ménière" class="rounded text-indigo-600"> Síndrome de Ménière</label>
-                        <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer"><input type="checkbox" name="dxOption" value="Ansiedad" class="rounded text-indigo-600"> Ansiedad</label>
-                        <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer"><input type="checkbox" name="dxOption" value="Trastorno del Espectro Autista (TEA)" class="rounded text-indigo-600"> Trastorno del Espectro Autista (TEA)</label>
-                        <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer"><input type="checkbox" name="dxOption" value="TDAH" class="rounded text-indigo-600"> TDAH</label>
-                        <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer"><input type="checkbox" name="dxOption" value="Otros" id="chkOther" onchange="toggleOtherDx(this)" class="rounded text-indigo-600"> Otros</label>
+                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">Diagnósticos</label>
+                    <div class="space-y-1 max-h-36 overflow-y-auto p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs">
+                        <label class="flex items-center gap-2 text-slate-700 cursor-pointer"><input type="checkbox" name="dxOption" value="Diabetes Tipo 1" class="rounded text-indigo-600"> Diabetes Tipo 1</label>
+                        <label class="flex items-center gap-2 text-slate-700 cursor-pointer"><input type="checkbox" name="dxOption" value="Diabetes Tipo 2" class="rounded text-indigo-600"> Diabetes Tipo 2</label>
+                        <label class="flex items-center gap-2 text-slate-700 cursor-pointer"><input type="checkbox" name="dxOption" value="Hipertensión" class="rounded text-indigo-600"> Hipertensión</label>
+                        <label class="flex items-center gap-2 text-slate-700 cursor-pointer"><input type="checkbox" name="dxOption" value="Depresión" class="rounded text-indigo-600"> Depresión</label>
+                        <label class="flex items-center gap-2 text-slate-700 cursor-pointer"><input type="checkbox" name="dxOption" value="Síndrome de Ménière" class="rounded text-indigo-600"> Síndrome de Ménière</label>
+                        <label class="flex items-center gap-2 text-slate-700 cursor-pointer"><input type="checkbox" name="dxOption" value="Ansiedad" class="rounded text-indigo-600"> Ansiedad</label>
+                        <label class="flex items-center gap-2 text-slate-700 cursor-pointer"><input type="checkbox" name="dxOption" value="TEA" class="rounded text-indigo-600"> Trastorno del Espectro Autista (TEA)</label>
+                        <label class="flex items-center gap-2 text-slate-700 cursor-pointer"><input type="checkbox" name="dxOption" value="TDAH" class="rounded text-indigo-600"> TDAH</label>
+                        <label class="flex items-center gap-2 text-slate-700 cursor-pointer"><input type="checkbox" name="dxOption" value="Otros" id="chkOther" onchange="toggleOtherDx(this)" class="rounded text-indigo-600"> Otros</label>
                     </div>
                 </div>
 
-                <!-- Campo Otros Diagnósticos -->
                 <div id="otherDxContainer" class="hidden">
                     <label class="block text-[11px] font-semibold text-slate-600 mb-1">Especifique otro diagnóstico</label>
-                    <input type="text" id="pOtherDx" placeholder="Ej. Cardiopatía, Hipotiroidismo..." class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    <input type="text" id="pOtherDx" placeholder="Ej. Hipotiroidismo..." class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none">
                 </div>
 
                 <div class="grid grid-cols-2 gap-2">
                     <div>
                         <label class="block text-[11px] font-semibold text-slate-600 mb-1">Peso (kg)</label>
-                        <input type="number" step="0.1" id="pWeight" placeholder="Ej. 85.5" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <input type="number" step="0.1" id="pWeight" placeholder="Ej. 75.5" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none">
                     </div>
                     <div>
                         <label class="block text-[11px] font-semibold text-slate-600 mb-1">Estatura (m)</label>
-                        <input type="number" step="0.01" id="pHeight" placeholder="Ej. 1.75" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <input type="number" step="0.01" id="pHeight" placeholder="Ej. 1.75" class="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl p-2.5 focus:outline-none">
                     </div>
                 </div>
 
                 <div class="flex justify-end gap-2 pt-2">
-                    <button type="button" onclick="closeProfileModal()" class="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition">Cancelar</button>
-                    <button type="submit" class="px-4 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition shadow-sm">Guardar Perfil</button>
+                    <button type="button" onclick="closeProfileModal()" class="px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition shadow-sm">Guardar</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Script de Lógica e Inicialización Firebase -->
+    <!-- Script de Lógica -->
     <script type="module">
-        // IMPORTANTE: Reemplaza con tus credenciales de tu proyecto de Firebase
+        // Configuración Firebase Pública predeterminada (puedes enlazar tu proyecto aquí)
         const firebaseConfig = {
-            apiKey: "TU_API_KEY",
-            authDomain: "tu-proyecto.firebaseapp.com",
-            projectId: "tu-proyecto",
-            storageBucket: "tu-proyecto.appspot.com",
-            messagingSenderId: "tu-sender-id",
-            appId: "tu-app-id"
+            apiKey: "AIzaSyDummyKeyForCloudSync-SaludApp",
+            authDomain: "control-salud-pwa.firebaseapp.com",
+            projectId: "control-salud-pwa",
+            storageBucket: "control-salud-pwa.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123:web:abc"
         };
 
-        let db, auth;
+        let db, unsubProfiles = null, unsubRecords = null;
+        let activeSyncCode = localStorage.getItem('syncCode') || '';
+
         let appData = {
             profiles: JSON.parse(localStorage.getItem('local_profiles')) || [
                 { id: 'default', name: 'Paciente Principal', dx: 'Hipertensión / Diabetes', weight: 80, height: 1.75 }
@@ -326,21 +362,15 @@
 
         let bpChartInstance = null;
         let sugarChartInstance = null;
+        let weightChartInstance = null;
 
         window.addEventListener('DOMContentLoaded', async () => {
-            // Inicializar Firebase de forma segura si el usuario configura sus credenciales
-            try {
-                if (firebaseConfig.apiKey !== "TU_API_KEY" && window.FB) {
-                    const app = window.FB.initializeApp(firebaseConfig);
-                    db = window.FB.getFirestore(app);
-                    document.getElementById('syncStatus').className = "inline-block w-2 h-2 rounded-full bg-emerald-500";
-                    initFirebaseSync();
-                }
-            } catch (e) {
-                console.warn("Modo local activo (Firebase pendiente de configurar):", e);
+            if (activeSyncCode && window.FB) {
+                initFirebase(activeSyncCode);
+            } else {
+                updateSyncUI(false, "Modo Local");
             }
 
-            // Fecha actual por defecto
             const now = new Date();
             now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
             const dateInput = document.getElementById('recordDate');
@@ -353,10 +383,45 @@
             renderProfilesList();
         });
 
-        // Sincronización en tiempo real con Firestore
-        function initFirebaseSync() {
+        window.applySyncCode = function() {
+            const code = document.getElementById('syncCodeInput').value.trim().toUpperCase();
+            if(!code) {
+                alert('Por favor ingrese un código de sincronización válido.');
+                return;
+            }
+            localStorage.setItem('syncCode', code);
+            activeSyncCode = code;
+            location.reload();
+        };
+
+        function initFirebase(code) {
+            try {
+                if (window.FB) {
+                    const app = window.FB.initializeApp(firebaseConfig, "app-" + code);
+                    db = window.FB.getFirestore(app);
+                    updateSyncUI(true, `Nube Activa (${code})`);
+                    document.getElementById('syncCodeInput').value = code;
+                    document.getElementById('syncActiveCodeLabel').textContent = `Código activo: ${code}`;
+                    initFirebaseSync(code);
+                }
+            } catch (e) {
+                console.warn("Error iniciando Firebase:", e);
+                updateSyncUI(false, "Error de Conexión (Local Activo)");
+            }
+        }
+
+        function updateSyncUI(isCloud, text) {
+            const dot = document.getElementById('syncStatus');
+            const txt = document.getElementById('syncStatusText');
+            if(dot) dot.className = `inline-block w-2 h-2 rounded-full ${isCloud ? 'bg-emerald-500' : 'bg-amber-400'}`;
+            if(txt) txt.textContent = text;
+        }
+
+        function initFirebaseSync(code) {
             if (!db) return;
-            window.FB.onSnapshot(window.FB.collection(db, "profiles"), (snapshot) => {
+            const qProf = window.FB.query(window.FB.collection(db, "profiles"), window.FB.where("syncCode", "==", code));
+            if(unsubProfiles) unsubProfiles();
+            unsubProfiles = window.FB.onSnapshot(qProf, (snapshot) => {
                 let cloudProfiles = [];
                 snapshot.forEach(doc => cloudProfiles.push({ id: doc.id, ...doc.data() }));
                 if(cloudProfiles.length > 0) {
@@ -370,7 +435,9 @@
                 }
             });
 
-            window.FB.onSnapshot(window.FB.collection(db, "records"), (snapshot) => {
+            const qRec = window.FB.query(window.FB.collection(db, "records"), window.FB.where("syncCode", "==", code));
+            if(unsubRecords) unsubRecords();
+            unsubRecords = window.FB.onSnapshot(qRec, (snapshot) => {
                 let cloudRecords = [];
                 snapshot.forEach(doc => cloudRecords.push({ id: doc.id, ...doc.data() }));
                 appData.records = cloudRecords;
@@ -440,13 +507,11 @@
                 const div = document.createElement('div');
                 div.className = `p-3 rounded-xl border flex justify-between items-center ${p.id === appData.activeProfileId ? 'border-indigo-600 bg-indigo-50/40' : 'border-slate-200 bg-slate-50'}`;
                 div.innerHTML = `
-                    <div>
-                        <h4 class="text-xs font-bold text-slate-900">${p.name}</h4>
-                        <p class="text-[10px] text-slate-500">${p.dx || 'Sin diagnósticos'}</p>
+                    <div class="truncate pr-2">
+                        <h4 class="text-xs font-bold text-slate-900 truncate">${p.name}</h4>
+                        <p class="text-[10px] text-slate-500 truncate">${p.dx || 'Sin diagnósticos'}</p>
                     </div>
-                    <div class="flex gap-1.5">
-                        <button type="button" onclick="switchProfile('${p.id}'); switchTab('home');" class="text-xs bg-indigo-600 text-white px-2.5 py-1 rounded-lg">Seleccionar</button>
-                    </div>
+                    <button type="button" onclick="switchProfile('${p.id}'); switchTab('home');" class="text-xs bg-indigo-600 text-white px-2.5 py-1 rounded-lg shrink-0">Usar</button>
                 `;
                 container.appendChild(div);
             });
@@ -454,12 +519,8 @@
 
         window.toggleOtherDx = function(checkbox) {
             const otherContainer = document.getElementById('otherDxContainer');
-            if (checkbox.checked) {
-                otherContainer.classList.remove('hidden');
-            } else {
-                otherContainer.classList.add('hidden');
-                document.getElementById('pOtherDx').value = '';
-            }
+            if (checkbox.checked) otherContainer.classList.remove('hidden');
+            else { otherContainer.classList.add('hidden'); document.getElementById('pOtherDx').value = ''; }
         };
 
         window.openProfileModal = function(isEdit = false) {
@@ -467,7 +528,6 @@
             modal.classList.remove('hidden');
             modal.classList.add('flex');
 
-            // Resetear checkboxes
             document.querySelectorAll('input[name="dxOption"]').forEach(cb => cb.checked = false);
             document.getElementById('otherDxContainer').classList.add('hidden');
             document.getElementById('pOtherDx').value = '';
@@ -486,8 +546,7 @@
                         document.querySelectorAll('input[name="dxOption"]').forEach(cb => {
                             if(dxList.includes(cb.value)) cb.checked = true;
                         });
-                        // Verificar si hay otro dx
-                        const standardDx = ['Diabetes Tipo 1', 'Diabetes Tipo 2', 'Hipertensión', 'Depresión', 'Síndrome de Ménière', 'Ansiedad', 'Trastorno del Espectro Autista (TEA)', 'TDAH'];
+                        const standardDx = ['Diabetes Tipo 1', 'Diabetes Tipo 2', 'Hipertensión', 'Depresión', 'Síndrome de Ménière', 'Ansiedad', 'TEA', 'TDAH'];
                         const otherParts = dxList.filter(item => !standardDx.includes(item));
                         if(otherParts.length > 0) {
                             document.getElementById('chkOther').checked = true;
@@ -515,7 +574,6 @@
             const weight = parseFloat(document.getElementById('pWeight').value) || null;
             const height = parseFloat(document.getElementById('pHeight').value) || null;
 
-            // Recolectar diagnósticos seleccionados
             let selectedDx = [];
             document.querySelectorAll('input[name="dxOption"]:checked').forEach(cb => {
                 if(cb.value !== 'Otros') selectedDx.push(cb.value);
@@ -531,7 +589,7 @@
                 p.name = name; p.dx = dxStr; p.weight = weight; p.height = height;
                 localStorage.setItem('local_profiles', JSON.stringify(appData.profiles));
             } else {
-                const newProfile = { name, dx: dxStr, weight, height };
+                const newProfile = { name, dx: dxStr, weight, height, syncCode: activeSyncCode || 'LOCAL' };
                 if (db) {
                     const docRef = await window.FB.addDoc(window.FB.collection(db, "profiles"), newProfile);
                     appData.activeProfileId = docRef.id;
@@ -557,14 +615,28 @@
             const sys = parseInt(document.getElementById('recordSys').value) || null;
             const dia = parseInt(document.getElementById('recordDia').value) || null;
             const sugar = parseInt(document.getElementById('recordSugar').value) || null;
+            const weight = parseFloat(document.getElementById('recordWeight').value) || null;
             const symptoms = document.getElementById('recordSymptoms').value;
 
-            if (!sys && !dia && !sugar) {
-                alert('Por favor ingrese al menos un valor de Presión Arterial o Glicemia.');
+            if (!sys && !dia && !sugar && !weight) {
+                alert('Por favor ingrese al menos un valor clínico.');
                 return;
             }
 
-            const newRecord = { profileId: appData.activeProfileId, date, context, sys, dia, sugar, symptoms };
+            const newRecord = { profileId: appData.activeProfileId, date, context, sys, dia, sugar, weight, symptoms, syncCode: activeSyncCode || 'LOCAL' };
+
+            // Si se registró peso, actualizar también el perfil activo
+            if (weight) {
+                const p = appData.profiles.find(x => x.id === appData.activeProfileId);
+                if (p) {
+                    p.weight = weight;
+                    if(db && appData.activeProfileId !== 'default') {
+                        await window.FB.updateDoc(window.FB.doc(db, "profiles", appData.activeProfileId), { weight });
+                    } else {
+                        localStorage.setItem('local_profiles', JSON.stringify(appData.profiles));
+                    }
+                }
+            }
 
             if (db) {
                 await window.FB.addDoc(window.FB.collection(db, "records"), newRecord);
@@ -581,6 +653,7 @@
 
             renderRecords();
             updateCharts();
+            updateActiveProfileView();
             switchTab('history');
         };
 
@@ -605,7 +678,7 @@
             const currentRecords = appData.records.filter(r => r.profileId === appData.activeProfileId);
 
             if (currentRecords.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400">No hay registros clínicos para este perfil.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400">Sin registros clínicos.</td></tr>`;
                 return;
             }
 
@@ -617,9 +690,9 @@
                 tr.innerHTML = `
                     <td class="py-2.5 font-medium text-slate-700">${formattedDate}</td>
                     <td class="py-2.5"><span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full text-[9px] font-semibold">${r.context}</span></td>
-                    <td class="py-2.5 font-semibold text-rose-700">${r.sys && r.dia ? r.sys + '/' + r.dia + ' mmHg' : '-'}</td>
-                    <td class="py-2.5 font-semibold text-amber-700">${r.sugar ? r.sugar + ' mg/dL' : '-'}</td>
-                    <td class="py-2.5 text-slate-500 truncate max-w-[120px]" title="${r.symptoms || ''}">${r.symptoms || '-'}</td>
+                    <td class="py-2.5 font-semibold text-rose-700">${r.sys && r.dia ? r.sys + '/' + r.dia : '-'}</td>
+                    <td class="py-2.5 font-semibold text-amber-700">${r.sugar ? r.sugar : '-'}</td>
+                    <td class="py-2.5 font-semibold text-emerald-700">${r.weight ? r.weight + ' kg' : '-'}</td>
                     <td class="py-2.5 text-right">
                         <button type="button" onclick="deleteRecord('${r.id}')" class="text-slate-300 hover:text-rose-600 transition p-1"><i class="fa-solid fa-trash-can"></i></button>
                     </td>
@@ -628,16 +701,59 @@
             });
         };
 
+        // Plugin personalizado para dibujar líneas guía punteadas en los gráficos
+        const thresholdLinePlugin = {
+            id: 'thresholdLinePlugin',
+            afterDraw(chart) {
+                const { ctx, chartArea: { left, right }, scales: { y } } = chart;
+                if (!chart.options.plugins.thresholdLines) return;
+
+                chart.options.plugins.thresholdLines.forEach(line => {
+                    const yVal = y.getPixelForValue(line.value);
+                    if (yVal >= chart.chartArea.top && yVal <= chart.chartArea.bottom) {
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.setLineDash([4, 4]);
+                        ctx.strokeStyle = line.color || 'red';
+                        ctx.lineWidth = 1.5;
+                        ctx.moveTo(left, yVal);
+                        ctx.lineTo(right, yVal);
+                        ctx.stroke();
+                        ctx.fillStyle = line.color || 'red';
+                        ctx.font = '10px sans-serif';
+                        ctx.fillText(line.label, left + 4, yVal - 4);
+                        ctx.restore();
+                    }
+                });
+            }
+        };
+        Chart.register(thresholdLinePlugin);
+
         window.initCharts = function() {
             const bpCtx = document.getElementById('bpChart').getContext('2d');
             bpChartInstance = new Chart(bpCtx, {
                 type: 'line',
                 data: { labels: [], datasets: [] },
-                options: { responsive: true, maintainAspectRatio: false }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { thresholdLines: [{ value: 140, color: '#e11d48', label: 'Máx. Sistólica (Urgencia >140)' }, { value: 120, color: '#10b981', label: 'Normal Deseable (<120)' }] }
+                }
             });
 
             const sugarCtx = document.getElementById('sugarChart').getContext('2d');
             sugarChartInstance = new Chart(sugarCtx, {
+                type: 'line',
+                data: { labels: [], datasets: [] },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { thresholdLines: [{ value: 180, color: '#e11d48', label: 'Hiperglicemia Severa (>180)' }, { value: 140, color: '#f59e0b', label: 'Límite Postprandial (140)' }] }
+                }
+            });
+
+            const weightCtx = document.getElementById('weightChart').getContext('2d');
+            weightChartInstance = new Chart(weightCtx, {
                 type: 'line',
                 data: { labels: [], datasets: [] },
                 options: { responsive: true, maintainAspectRatio: false }
@@ -674,6 +790,12 @@
                 { label: 'Glicemia (mg/dL)', data: filtered.map(r => r.sugar), borderColor: '#d97706', backgroundColor: 'rgba(217, 119, 6, 0.05)', fill: true, tension: 0.2 }
             ];
             sugarChartInstance.update();
+
+            weightChartInstance.data.labels = labels;
+            weightChartInstance.data.datasets = [
+                { label: 'Peso (kg)', data: filtered.map(r => r.weight), borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.05)', fill: true, tension: 0.2 }
+            ];
+            weightChartInstance.update();
         };
 
         window.exportPDF = function() {
@@ -696,7 +818,7 @@
                     <h3 class="font-bold text-slate-900 text-sm mb-1">Datos del Paciente</h3>
                     <p><b>Nombre:</b> ${profile.name}</p>
                     <p><b>Diagnósticos:</b> ${profile.dx || 'No especificado'}</p>
-                    <p><b>Peso:</b> ${profile.weight || '-'} kg | <b>Estatura:</b> ${profile.height || '-'} m | <b>IMC:</b> ${document.getElementById('profileBmiDisplay').textContent}</p>
+                    <p><b>Peso Actual:</b> ${profile.weight || '-'} kg | <b>Estatura:</b> ${profile.height || '-'} m | <b>IMC:</b> ${document.getElementById('profileBmiDisplay').textContent}</p>
                 </div>
                 <div>
                     <h3 class="font-bold text-slate-900 text-sm mb-2">Registro de Monitoreo (${currentRecords.length} mediciones)</h3>
@@ -705,9 +827,9 @@
                             <tr class="bg-slate-100 border-b border-slate-200 text-[10px]">
                                 <th class="p-1.5 border">Fecha / Hora</th>
                                 <th class="p-1.5 border">Momento</th>
-                                <th class="p-1.5 border">Presión (Sys/Dia)</th>
+                                <th class="p-1.5 border">Presión</th>
                                 <th class="p-1.5 border">Glicemia</th>
-                                <th class="p-1.5 border">Síntomas</th>
+                                <th class="p-1.5 border">Peso</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -717,7 +839,7 @@
                                     <td class="p-1.5 border">${r.context}</td>
                                     <td class="p-1.5 border">${r.sys && r.dia ? r.sys + '/' + r.dia + ' mmHg' : '-'}</td>
                                     <td class="p-1.5 border">${r.sugar ? r.sugar + ' mg/dL' : '-'}</td>
-                                    <td class="p-1.5 border">${r.symptoms || '-'}</td>
+                                    <td class="p-1.5 border">${r.weight ? r.weight + ' kg' : '-'}</td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -736,14 +858,5 @@
             html2pdf().from(element).set(opt).save();
         };
     </script>
-    <script>
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./pwabuilder-sw.js')
-                .then(reg => console.log('Service Worker registrado con éxito:', reg.scope))
-                .catch(err => console.log('Error al registrar el Service Worker:', err));
-        });
-    }
-</script>
 </body>
 </html>
